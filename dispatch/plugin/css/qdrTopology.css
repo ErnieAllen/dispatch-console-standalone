@@ -1,0 +1,128 @@
+/**
+path.link {
+  fill: none;
+  stroke: #666;
+  stroke-width: 1.5px;
+}
+
+marker#licensing {
+  fill: green;
+}
+
+path.link.licensing {
+  stroke: green;
+}
+
+path.link.resolved {
+  stroke-dasharray: 0,2 1;
+}
+
+circle {
+  fill: #ccc;
+  stroke: #333;
+  stroke-width: 1.5px;
+}
+
+text {
+  font: 10px sans-serif;
+  pointer-events: none;
+}
+
+text.shadow {
+  stroke: #fff;
+  stroke-width: 3px;
+  stroke-opacity: .8;
+}
+*/
+
+svg {
+  background-color: transparent;
+  cursor: default;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}
+
+svg:not(.active):not(.ctrl) {
+  cursor: crosshair;
+}
+
+path.link {
+  fill: none;
+  stroke: #000;
+  stroke-width: 4px;
+  cursor: default;
+}
+
+svg:not(.active):not(.ctrl) path.link {
+  cursor: pointer;
+}
+
+path.link.selected {
+  stroke-dasharray: 10,2;
+  stroke: #F00  !important;
+}
+
+
+path.link.highlighted {
+    stroke: #0F0 !important;
+
+}
+
+path.link.dragline {
+  pointer-events: none;
+}
+
+path.link.hidden {
+  stroke-width: 0;
+}
+
+
+circle.node {
+  stroke-width: 1.5px;
+  cursor: pointer;
+}
+
+circle.node.reflexive {
+  stroke: #F00 !important;
+  stroke-width: 2.5px;
+}
+
+circle.node.selected {
+  stroke: #F00 !important;
+  stroke-width: 2.5px;
+}
+
+circle.node.fixed {
+  fill: #400;
+}
+
+text {
+  font: 12px sans-serif;
+  pointer-events: none;
+}
+
+text.id {
+  text-anchor: middle;
+  font-weight: bold;
+}
+
+.row-fluid.tertiary {
+  position: relative;
+  left: 20px;
+}
+
+.row-fluid.tertiary.left {
+  float: left;
+}
+
+.row-fluid.tertiary.panel {
+  width: 410px;
+  height: 100%;
+}
+
+.panel-adjacent {
+  margin-left: 430px;
+}

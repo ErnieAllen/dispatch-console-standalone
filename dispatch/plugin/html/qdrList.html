@@ -1,0 +1,18 @@
+<div class="main-display row-fluid qdrList" ng-controller="QDR.ListController">
+        <ul class="nav nav-tabs qdrListNodes">
+          <li ng-repeat="node in nodes" ng-click="selectNode({{node}})" ng-class="{selected : isNodeSelected(node.id)}"> <span>{{node.name}}</span> </li>
+        </ul>
+
+      <div class="row-fluid qdrListActions">
+        <ul class="nav nav-tabs ng-scope">
+            <li ng-repeat="nav in navs" ng-class="{active : isActionActive(nav.href)}" ng-click="selectAction('{{nav.href}}')" >
+                <a title="nav.title" data-placement="bottom" class="ng-binding"><i class="{{nav.iclass}}"></i> {{nav.name}} </a></li>
+        </ul>
+          <div class="gridStyle" ng-grid="gridDef"></div>
+          <div class="selectedItems">
+
+            <div class="gridStyle gridDetails" ng-grid="details"></div>
+          </div>
+      </div>
+      <div id="graph"></div>
+</div>
