@@ -34,9 +34,7 @@ var hawtioPluginLoader = (function(self, window, undefined) {
 
   self.addModule = function(module) {
     var allowed = ["ide", "hawtioCore", "angularFileUpload", "hawtio-ui", "api", "themes", "dashboard", "datatable", "wiki", "hawtio-forms",
-                    "tree", "Service", "QDR", "jsonFormatter", "ngGrid"];
-//    var allowed = ["ide", "hawtioCore", "angularFileUpload", "hawtio-ui", "api", "themes", "dashboard", "datatable", "wiki", "hawtio-forms",
-  //                  "tree", "log", "perspective", "hawtioRbac", "Service", "site", "source", "wiki-drop", "QDR"];
+                    "tree", "Service", "QDR", "jsonFormatter", "ngGrid", "dialogService", "ui.slider", "minicolors", "ngAnimate"];
     if (allowed.indexOf(module) > -1 ) {
         log.debug("Adding module: " + module);
         self.modules.push(module);

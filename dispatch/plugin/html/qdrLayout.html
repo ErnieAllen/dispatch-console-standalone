@@ -1,5 +1,5 @@
 <ul class="nav nav-tabs connected" ng-controller="QDR.NavBarController">
-  <li ng-repeat="link in breadcrumbs" ng-show="isValid(link)" ng-class='{active : isActive(link.href)}'>
+  <li ng-repeat="link in breadcrumbs" ng-show="isValid(link)" ng-class='{active : isActive(link.href), "pull-right" : isRight(link), haschart: hasChart(link)}'>
     <a ng-href="{{link.href}}{{hash}}" ng-bind-html-unsafe="link.content"></a>
   </li>
 </ul>

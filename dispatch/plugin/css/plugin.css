@@ -1,5 +1,4 @@
-.main-display > .span2,
-.main-display > .span8 {
+main-display > .span8 {
   height: 100%;
   position: relative;
 }
@@ -145,16 +144,262 @@ ul.qdrListNodes > li > span {
   z-index: 50;
 }
 
-div.listAttrName i.icon-signal {
+div.listAttrName i.icon-bar-chart {
     float: right;
-    padding: 5px;
-    border: 1px solid #AEAEAE;
+    margin: 8px 5px 5px 5px;
+    /*
     margin-right: 2px;
-    margin-top: 2px;
+    */
+    /*border: 1px solid #AEAEAE; */
 }
 
-div.listAttrName i.icon-signal.active {
-    border: 1px solid green;
+div.listAttrName i.icon-bar-chart.active, li.haschart i {
     background-color: #AAFFAA;
 }
 
+div#main div ul.nav li a:not(.btn) {
+    background: initial !important;
+}
+
+div#main div ul.nav li.active a {
+    background-color: #f0f0ff !important;
+}
+
+div.charts-header {
+  font-size: 1.2em;
+  color: #666666;
+  margin: 1em 0;
+}
+
+.selectedNode, .selectedAction, .selectedEntity {
+    font-weight: 600;
+    color: #606066;
+}
+
+.okButton {
+    text-align: center;
+    margin: 1em;
+}
+
+span.showChartsLink {
+    border: 1px solid blue;
+    padding: 1px 2px;
+}
+
+div.listGraphs p {
+    margin: 1em 0 2em 2em;
+    text-align: center;
+}
+
+div.centered {
+    text-align: center;
+    margin: 4em;
+}
+
+div.aChart {
+    height: 200px;
+    width:  400px;
+    margin: 1em;
+}
+
+div.chartContainer {
+    float: left;
+}
+
+div.d3Chart path {
+    stroke: black;
+    stroke-width: 1;
+    fill: #EEFFEE;
+}
+
+div.d3Chart path.line {
+    stroke: steelblue;
+    stroke-width: 1;
+    fill: none;
+    opacity: 1;
+}
+
+.mo-rect {
+    fill: #ffffdd;
+    stroke: #f0f0f0;
+    stroke-width: 1;
+}
+
+.mo-guide {
+    fill: none;
+    stroke: #d0d0d0;
+    stroke-width: 1;
+    stroke-dasharray: 3,3;
+}
+
+div.d3Chart .title {
+    text-decoration: underline;
+}
+
+.y.axis line, .y.axis path {
+  fill: none;
+  shape-rendering: crispEdges;
+  stroke-width: 4;
+  stroke: #000000;
+}
+
+.y.axis line {
+  stroke: #C0C0C0;
+  stroke-dasharray: 1,1;
+  stroke-width: 1;
+}
+
+.y.axis text, .x.axis text, .focus text, div.d3Chart .title {
+    font-size: 12px;
+}
+
+.y.axis path {
+   stroke: #000;
+ }
+
+.overlay {
+   fill: none;
+   pointer-events: all;
+ }
+
+.focus circle {
+   fill: none;
+   stroke: steelblue;
+ }
+
+div.d3Chart {
+    padding: 1em 0;
+    border: 1px solid #C0C0C0;
+}
+
+div.chartContainer div.aChart {
+    margin-top: 0.5em;
+}
+
+div#main.qdr div ul.nav li.active a {
+  background-color: #e0e0ff !important;
+  color: #000000;
+}
+
+div#main.qdr .selected, .box.selected {
+  color: #000000;
+  text-shadow: none;
+}
+
+/* the selected node on the list page */
+div.qdrList li.active {
+    background-color: #e0e0ff;
+}
+
+/* the selected row in the name table */
+div#main.qdr div.qdrList div.selected {
+  background-color: #e0e0ff !important;
+}
+
+#dialogChart {
+    height: 200px;
+}
+
+div.qdrCharts p.chartLabels button {
+    float: right;
+}
+
+div.qdrCharts p.chartLabels {
+     padding-right: 1em;;
+ }
+
+p.dialogHeader {
+    text-align: center;
+}
+
+p.dialogHeader input {
+    margin-top: 10px;
+    width: 480px;
+}
+
+.ui-slider-tick {
+  position: absolute;
+  background-color: #666;
+  width: 2px;
+  height: 8px;
+  top: 12px;
+  z-index: -1;
+}
+
+label.rateGroup {
+    float: left;
+}
+
+div.chartOptions div.dlg-slider {
+    float: left;
+    margin-left: 2em;
+    width: 28em;
+    font-size: 14px;
+}
+
+div.chartOptions div.duration {
+  width: 35em !important;
+}
+
+div.chartOptions .slider {
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+input[type="radio"] {
+    margin-top: 0 !important;
+}
+
+div.chartOptions legend {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+}
+
+div.chartOptions span.minicolors-swatch {
+    width: 14px;
+    height: 14px;
+}
+
+.minicolors-input {
+    width: 4em;
+    padding: 0 0 0 24px !important;
+}
+
+
+div.colorPicker div:nth-of-type(1), /* first span under div.colorPicker */
+ div.minicolors{
+    float:left;
+    margin-right: 0.5em;
+}
+
+div.chartOptions p.sep {
+    height: 1em;
+}
+
+ul.nav-tabs {
+    border-bottom: 1px solid #ddd !important;
+}
+
+div.tabbable div.tab-content {
+    overflow: visible;
+}
+
+div.tabbable ul.nav-tabs > .active > a {
+  background-color: #f8f8f8;
+  border: 1px solid #ddd;
+  border-bottom-color: transparent;
+}
+
+
+div.tabbable .tab-pane {
+    background-color: #f8f8f8;
+    padding: 12px;
+    border-right: 1px solid #ddd;
+    border-left: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+}
+
+div.tabbable ul.nav-tabs {
+  margin-bottom: 0;
+}
+/* , .nav-tabs > .active > a:hover */

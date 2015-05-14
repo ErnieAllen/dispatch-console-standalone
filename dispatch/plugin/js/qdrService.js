@@ -142,10 +142,8 @@ var QDR = (function(QDR) {
     },
     
     onSubscription: function() {
-        //setInterval( function () { self.topology.get() }, 1000);
         self.getSchema();
-        self.startUpdating();
-        //self.topology.get();
+        self.topology.get();
      },
 
     startUpdating: function () {
@@ -233,6 +231,11 @@ var QDR = (function(QDR) {
 		return id.split('/')[3];
       },
 
+      humanify: function (s) {
+          var t = s.charAt(0).toUpperCase() + s.substr(1).replace(/[A-Z]/g, ' $&');
+          return t.replace(".", " ");
+      },
+
       nodeNameList: function() {
         var nl = [];
         // if we are in the middel of updating the topology
@@ -256,6 +259,16 @@ var QDR = (function(QDR) {
         }
         return nl;
       },
+
+      // given an attribute name array, find the value at the same index in the values array
+      valFor: function (aAr, vAr, key) {
+          var idx = aAr.indexOf(key);
+          if ((idx > -1) && (idx < vAr.length)) {
+              return vAr[idx];
+          }
+          return null;
+      },
+
       /*
        *
        * send the management messages that build up the topology
@@ -368,11 +381,15 @@ var QDR = (function(QDR) {
             self.topology.cleanUp(values);
         },
         expect: function (id, key) {
+            if (!key || !id)
+                return;
             if (!(id in this._expected))
                 this._expected[id] = [];
-            this._expected[id].push(key);
+            if (this._expected[id].indexOf(key) == -1)
+                this._expected[id].push(key);
         },
 /*
+The response looks like:
 {
     ".router": {
         "results": [
@@ -465,14 +482,15 @@ var QDR = (function(QDR) {
       },
 
       makeMgmtCalls: function (id) {
-            self.getNodeInfo(id, ".router", [], self.topology.addNodeInfo);
-            self.getNodeInfo(id, ".connection", [], self.topology.addNodeInfo);
-            self.getNodeInfo(id, ".router.node", ["nextHop", "routerId"], self.topology.addNodeInfo);
+            var keys = [".router", ".connection", ".router.node"];
+            $.each(keys, function (i, key) {
+                self.topology.expect(id, key);
+                self.getNodeInfo(id, key, [], self.topology.addNodeInfo);
+            });
       },
 
       getNodeInfo: function (nodeName, entity, attrs, callback) {
         //QDR.log.debug("getNodeInfo called with nodeName: " + nodeName + " and entity " + entity);
-        self.topology.expect(nodeName, entity);
         var id;
         self.correlator.request(
             id = self.sendQuery(nodeName, entity, attrs)
@@ -590,7 +608,8 @@ var QDR = (function(QDR) {
         self.options = options;
         self.topologyInitialized = false;
         if (!self.subscribed) {
-            var baseAddress = 'amqp://' + options.address + ':5673';
+            var port = options.port || 5673;
+            var baseAddress = 'amqp://' + options.address + ':' + port;
             self.address = baseAddress;
             QDR.log.debug("Subscribing to router: ", baseAddress + "/#");
             self.subscription = self.messenger.subscribe(baseAddress + "/#");

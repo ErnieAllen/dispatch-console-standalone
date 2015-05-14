@@ -1,27 +1,26 @@
-<div class="row-fluid tertiary left panel">
+<div class="qdrTopology row-fluid">
+    <div class=" tertiary left panel">
+        <div id="topologyForm" ng-class="{selected : isSelected()}" ng-controller="QDR.TopologyFormController">
+            <!-- <div ng-repeat="form in forms" ng-show="isVisible(form)" ng-class='{selected : isSelected(form)}'> -->
 
-    
-    <div ng-controller="QDR.TopologyFormController">
-        <div ng-show="isGeneral()">
-            <h4>Router Info</h4>
-            <table class="table table-condensed table-striped"
-               hawtio-simple-table="topoGridOptions"></table>
+            <div ng-show="isGeneral()">
+                <h4>Router Info</h4>
+                <table class="table table-condensed table-striped"
+                   hawtio-simple-table="topoGridOptions"></table>
+            </div>
+            <div ng-class="{selected : isSelected('connections')}" ng-show="isConnections()">
+                <h4>Connection Info</h4>
+                <table class="table table-condensed table-striped"
+                   hawtio-simple-table="topoConnOptions"></table>
+            </div>
+            {{update()}}
         </div>
-        <div ng-show="isConnections()">
-            <h4>Connection Info</h4>
-            <table class="table table-condensed table-striped"
-               hawtio-simple-table="topoConnOptions"></table>
+    </div>
+    <div class="panel-adjacent canvas" ng-controller="QDR.TopologyController">
+        <div id="topology">
+            {{update()}}
         </div>
-        {{update()}}
+
     </div>
 </div>
-<div class="panel-adjacent canvas" ng-controller="QDR.TopologyController">
-    <json-formatter json="schema" open="1"></json-formatter>
-    <div id="topology">
-        {{update()}}
-    </div>
-
-</div>
-
-
 

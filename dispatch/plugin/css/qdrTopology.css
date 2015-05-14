@@ -62,7 +62,7 @@ svg:not(.active):not(.ctrl) path.link {
 
 path.link.selected {
   stroke-dasharray: 10,2;
-  stroke: #F00  !important;
+  stroke: #00F  !important;
 }
 
 
@@ -92,7 +92,7 @@ circle.node.reflexive {
 
 circle.node.selected {
   stroke: #F00 !important;
-  stroke-width: 2.5px;
+  stroke-width: 2px;
 }
 
 circle.node.fixed {
@@ -125,4 +125,15 @@ text.id {
 
 .panel-adjacent {
   margin-left: 430px;
+}
+
+#topologyForm.selected {
+  border: 1px solid red;
+}
+#topologyForm {
+  border: 1px solid white;
+}
+
+#topologyForm {
+    padding: 2px;
 }

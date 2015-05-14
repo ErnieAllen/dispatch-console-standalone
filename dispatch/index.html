@@ -48,6 +48,9 @@
     <link rel="stylesheet" href="css/toggle-switch.css" type="text/css"/>
     <link rel="stylesheet" href="css/metrics-watcher-style.css" type="text/css"/>
     <link rel="stylesheet" href="css/site-base.css" type="text/css"/>
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.24/themes/smoothness/jquery-ui.css">
+
+
     <!-- endbuild -->
 
     <!--
@@ -86,123 +89,16 @@
         div.log-stack-trace p:nth-child(odd) {
           background: #f3f3f3;
         }
+
         </style>
         -->
     </script>
 </head>
 
 <body>
-<div id="log-panel" style="bottom: 110%" ng-controller="Core.ConsoleController">
-    <div>
-        <ul id="log-panel-statements"></ul>
-        <div id="close" log-toggler>
-            <i class="icon-chevron-up"></i>
-        </div>
-        <div id="copy">
-            <i class="span2 icon-copy" title="Click to copy log to clipboard"
-               zero-clipboard
-               use-callback="setHandler(clip)"></i>
-            <i class="span3 icon-trash" title="Click to clear log"
-               zero-clipboard
-               use-callback="setHandler(clip)"></i>
-        </div>
-    </div>
-</div>
-
 <div id="main-body" ng-controller="Core.AppController" style="display: none;">
     <!--  navbar-inverse -->
     <div id="main-nav" class="navbar navbar-fixed-top" ng-show="!fullScreen()" ng-controller="Core.NavBarController">
-
-        <div class="navbar-inner main-nav-upper">
-
-            <div class="container">
-                <div class="pull-left">
-                    <a ng-href="#"
-                       title="Go to home"
-                       class="brand"
-                       data-placement="bottom"
-                       ng-include="'app/core/html/branding.html'">
-                    </a>
-                </div>
-                <div class="pull-right">
-                    <ul class="nav nav-tabs pull-right">
-                        <li ng-show="loggedIn() && isCustomLinkSet() > 0 " class="dropdown">
-                            <a ng-href="#"
-                               title="{{navBarViewCustomLinks.dropDownLabel}}"
-                               data-placement="bottom"
-                               class="dropdown-toggle"
-                               data-toggle="dropdown">
-                                <i class="icon-user fixme"></i>&nbsp;&nbsp;<span>{{navBarViewCustomLinks.dropDownLabel}}</span>&nbsp;<span class="caret"></span>
-                            </a>
-                            <ul class="dropdown-menu right">
-                                <li ng-repeat="entry in navBarViewCustomLinks.list">
-                                    <a ng-href="{{entry.href}}"
-                                       ng-click="entry.action()"
-                                       title="{{entry.title}}">
-                                        <i class="{{entry.icon}}"></i>&nbsp;&nbsp;{{entry.title}}
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-
-                        <li ng-show="loggedIn()">
-                            <a ng-href=""
-                               title="Show the logging console"
-                               data-placement="bottom"
-                               log-toggler>
-                                <i class="icon-desktop"></i>
-                            </a>
-                        </li>
-                        <li ng-show="loggedIn()" ng-class="{active : isActive('#/help')}">
-                            <a ng-href="{{link('#/help', true)}}"
-                               title="Read the help about how to use this console"
-                               data-placement="bottom">
-                                <i class="icon-question-sign"></i>
-                            </a>
-                        </li>
-
-                        <li ng-show="loggedIn() && hasMBeans()" class="dropdown">
-                            <a ng-href="#"
-                               title="Preferences {{showLogout() ? 'and log out' : ''}}"
-                               data-placement="bottom"
-                               class="dropdown-toggle"
-                               data-toggle="dropdown">
-                                <i class="icon-user fixme"></i>&nbsp;&nbsp;<span>{{getUsername()}}</span>&nbsp;<span class="caret"></span>
-                            </a>
-                            <ul class="dropdown-menu right">
-                                <li>
-                                    <a href="" ng-click="showPreferences()"
-                                       title="Edit your preferences"
-                                       data-placement="bottom">
-                                        <i class="icon-cogs fixme"></i> Preferences
-                                    </a>
-                                </li>
-
-                                <li ng-show="showLogout()">
-                                    <a href="" title="Log out" data-placement="bottom" ng-click="logout()">
-                                        <i class="icon-signout fixme"></i> Log out
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <a ng-href="{{link('#/about', true)}}" title="About" data-placement="bottom">
-                                        <i class="icon-info"></i> About {{branding.name}}
-                                    </a>
-                                </li>
-
-                            </ul>
-                        </li>
-
-                        <li ng-hide="loggedIn()" ng-class="{active : isActive('#/login')}">
-                            <a ng-href="{{link('#/login', true)}}" title="Log in" data-placement="bottom">
-                                <i class="icon-user"></i>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-        </div>
 
         <div class="navbar-inner main-nav-lower" ng-show="!login()">
             <div class="container">
@@ -269,23 +165,8 @@
             </div>
         </div>
     </div>
-    <!--
-    <div id="main" class="container-fluid ng-cloak" ng-controller="Core.ViewController">
-        <div ng-include src="src/html/qdrLayout.html"></div>
-        <div ng-include src="viewPartial"></div>
-    </div>
-    -->
-    <div id="main" class="container-fluid ng-cloak">
-        <ul class="nav nav-tabs connected" ng-controller="QDR.NavBarController">
-            <li ng-repeat="link in breadcrumbs" ng-show="isValid(link)" ng-class='{active : isActive(link.href)}'>
-                <a ng-href="{{link.href}}{{hash}}" ng-bind-html-unsafe="link.content"></a>
-            </li>
-        </ul>
-        <div class="row-fluid">
-            <div ng-view>
-
-            </div>
-        </div>
+    <div id="main" class="container-fluid ng-cloak qdr" style="margin-top: 42px !important;">
+        <div ng-include src="'plugin/html/qdrLayout.html'"></div>
     </div>
 
     <div class="ng-cloak">
@@ -350,7 +231,8 @@
 <!--
 TODO add patch for dashboard until angular supports nested custom injections
 -->
-<script type="text/javascript" src="lib/angular.js"></script>
+<script src="http://code.angularjs.org/1.1.5/angular.js"></script>
+<!--<script type="text/javascript" src="lib/angular.js"></script>-->
 <script type="text/javascript" src="lib/angular-bootstrap.min.js"></script>
 <script type="text/javascript" src="lib/angular-resource.min.js"></script>
 <!-- enable if sanitize becomes needed
@@ -369,13 +251,15 @@ TODO add patch for dashboard until angular supports nested custom injections
 <!-- charts and jolokia for jmx -->
 <script type="text/javascript" src="lib/jolokia-min.js"></script>
 <script type="text/javascript" src="lib/cubism.v1.min.js"></script>
+<script type="text/javascript" src="lib/jolokia-cubism-min.js"></script>
 <script type="text/javascript" src="lib/jolokia-simple-min.js"></script>
 
 <!-- ng-grid -->
 <script type="text/javascript" src="lib/ng-grid.min.js"></script>
 
 <!-- dyna tree -->
-<script type="text/javascript" src="lib/jquery-ui.custom.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.24/jquery-ui.js"></script>
+<!-- <script type="text/javascript" src="lib/jquery-ui.custom.min.js"></script> -->
 <script type="text/javascript" src="lib/jquery.cookie.js"></script>
 <script type="text/javascript" src="lib/jquery.dynatree.min.js"></script>
 
@@ -437,6 +321,8 @@ TODO add patch for dashboard until angular supports nested custom injections
 <script type="text/javascript" src="lib/ui-bootstrap-0.4.0.min.js"></script>
 <script type="text/javascript" src="lib/ui-bootstrap-tpls-0.4.0.min.js"></script>
 
+<script src="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+
 <!-- helper libraries -->
 <script type="text/javascript" src="lib/sugar-1.4.1-custom.min.js"></script>
 <script type="text/javascript" src="lib/URI.js"></script>
@@ -470,18 +356,23 @@ TODO add patch for dashboard until angular supports nested custom injections
 <script type="text/javascript" src="app/app.js"></script>
 
 <!-- endbuild -->
+
 <script type="text/javascript" src="plugin/js/navbar.js"></script>
 <script type="text/javascript" src="plugin/js/qdrList.js"></script>
+<script type="text/javascript" src="plugin/js/qdrCharts.js"></script>
 <script type="text/javascript" src="plugin/js/qdrPlugin.js"></script>
 <script type="text/javascript" src="plugin/js/qdrService.js"></script>
+<script type="text/javascript" src="plugin/js/qdrChartService.js"></script>
+<script type="text/javascript" src="plugin/lib/dialog-service.js"></script>
+<script type="text/javascript" src="plugin/lib/slider.js"></script>
+<script type="text/javascript" src="plugin/lib/jquery-minicolors.min.js"></script>
+<script type="text/javascript" src="plugin/lib/angular-minicolors.js"></script>
 <script type="text/javascript" src="plugin/js/qdrTopology.js"></script>
 <script type="text/javascript" src="plugin/js/settings.js"></script>
 <script type="text/javascript" src="plugin/lib/proton.js"></script>
 <script type="text/javascript" src="plugin/lib/json-formatter-min.js"></script>
 
-
 <!-- Distro customisations -->
-<script type="text/javascript" src="vendor.js"></script>
 </body>
 
 </html>

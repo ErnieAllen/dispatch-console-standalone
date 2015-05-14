@@ -66,6 +66,7 @@ var QDR = (function (QDR) {
     QDR.currentAttributes = [];
     QDR.connAttributes = [];
     QDR.topoForm = "general";
+    QDR.topoFormSelected = "";
 
 	QDR.TopologyFormController = function($scope, localStorage, $location) {
 		QDR.log.debug("started QDR.TopologyFormController with location: " + $location.url());
@@ -83,6 +84,10 @@ var QDR = (function (QDR) {
 		$scope.isConnections = function () {
     	    return QDR.topoForm == 'connections';
 		};
+
+        $scope.isSelected = function () {
+            return (QDR.topoFormSelected != "");
+        }
 
         $scope.topoGridOptions = {
             selectedItems: [],
@@ -138,7 +143,7 @@ var QDR = (function (QDR) {
 		var force;
 		var animate = false; // should the force graph organize itself when it is displayed
 		var path;
-		var savedKeys = [];
+		var savedKeys = {};
 	    // mouse event vars
 	    var selected_node = null,
 	        selected_link = null,
@@ -148,7 +153,7 @@ var QDR = (function (QDR) {
 
 	    // set up initial nodes and links
 	    //  - nodes are known by 'id', not by index in array.
-	    //  - reflexive edges are indicated on the node (as a bold black circle).
+	    //  - selected edges are indicated on the node (as a bold red circle).
 	    //  - links are always source < target; edge directions are set by 'left' and 'right'.
 		var nodes = [];
 		var links = [];
@@ -157,7 +162,6 @@ var QDR = (function (QDR) {
 			return {   key: id,
 				name: name,
 				nodeType: nodeType,
-				reflexive: false,
 				x: x,
 				y: y,
 				id: nodeIndex,
@@ -230,21 +234,18 @@ var QDR = (function (QDR) {
 				var attrs = onode['.connection'].attributeNames;
 
 				for (var j = 0; j < conns.length; j++) {
-                    var role = valFor(attrs, conns[j], "role");
+                    var role = QDRService.valFor(attrs, conns[j], "role");
+                    var dir = QDRService.valFor(attrs, conns[j], "dir");
 					if (role == "inter-router") {
 						var target = getNodeIndex(conns[j][0]);
-						var linkIndex = getLink(source, target);
-						if (valFor(attrs, conns[j], "dir") == "out")
-						    links[linkIndex].right = true;
-						else
-						    links[linkIndex].left = true;
+						getLink(source, target, dir);
 					} else if (role == "normal" || role == "on-demand") {
 						// not a router, but an external client
-						QDR.log.debug("found an external client for " + id);
+						//QDR.log.debug("found an external client for " + id);
 						var name = QDRService.nameFromId(id) + "." + client;
-						QDR.log.debug("external client name is  " + name + " and the role is " + role);
+						//QDR.log.debug("external client name is  " + name + " and the role is " + role);
 						var parent = getNodeIndex(QDRService.nameFromId(id));
-						QDR.log.debug("external client parent is " + parent);
+						//QDR.log.debug("external client parent is " + parent);
 
                         // if we have any new clients, animate the force graph to position them
                         var position = angular.fromJson(localStorage[name]);
@@ -253,36 +254,16 @@ var QDR = (function (QDR) {
                             position = {x: nodes[parent].x + 40 + Math.sin(Math.PI/2 * client),
                                         y: nodes[parent].y + 40 + Math.cos(Math.PI/2 * client)};
                         }
-						QDR.log.debug("adding node " + nodeIndex);
+						//QDR.log.debug("adding node " + nodeIndex);
 						nodes.push(	aNode(id, name, role, nodeIndex, position.x, position.y, j) );
-						// nopw add a link
-						QDR.log.debug("adding link between nodes " + nodeIndex + " and " + parent);
-						getLink(nodeIndex, parent);
-
+						// now add a link
+						getLink(parent, nodeIndex, dir);
 						nodeIndex++;
 						client++;
 					}
 				}
 				source++;
 			}
-/*
-        {
-            ".router": {
-                "results": [
-                    [4, "router/QDR.X", 1, "0", 3, 60, 60, 9, "QDR.X", 30, "interior", "org.apache.qpid.dispatch.router", 3, 8, "router/QDR.X"]
-                ],
-                "attributeNames": ["raIntervalFlux", "name", "helloInterval", "area", "helloMaxAge", "mobileAddrMaxAge", "remoteLsMaxAge", "addrCount", "routerId", "raInterval", "mode", "type", "nodeCount", "linkCount", "identity"]
-            },
-           ".connection": {
-                "results": [
-                    ["QDR.B", "connection/0.0.0.0:20002", "operational", "0.0.0.0:20002", "inter-router", "connection/0.0.0.0:20002", "ANONYMOUS", "org.apache.qpid.dispatch.connection", "out"],
-                    ["QDR.A", "connection/0.0.0.0:20001", "operational", "0.0.0.0:20001", "inter-router", "connection/0.0.0.0:20001", "ANONYMOUS", "org.apache.qpid.dispatch.connection", "out"],
-                    ["b2de2f8c-ef4a-4415-9a23-000c2f86e85d", "connection/localhost:33669", "operational", "localhost:33669", "normal", "connection/localhost:33669", "ANONYMOUS", "org.apache.qpid.dispatch.connection", "in"]
-                ],
-                "attributeNames": ["container", "name", "state", "host", "role", "identity", "sasl", "type", "dir"]
-           },
-        }
-*/
             $scope.schema = QDRService.schema;
 			// add a row for each attribute in .router attributeNames array
 			for (var id in QDRService.topology._nodeInfo) {
@@ -298,35 +279,36 @@ var QDR = (function (QDR) {
 				.nodes(nodes)
 				.links(links)
 				.size([width, height])
-				.linkDistance(function(d) { return d.source.nodeType === 'inter-router' ? 150 : 50 })
+				.linkDistance(function(d) { return d.target.nodeType === 'inter-router' ? 150 : 65 })
 				.charge(-1800)
 				.friction(.10)
 				.gravity(0.0001)
 				.on('tick', tick)
 				.start()
 
-			// define arrow markers for graph links
-			svg.append('svg:defs').append('svg:marker')
-				.attr('id', 'end-arrow')
-				.attr('viewBox', '0 -5 10 10')
-				.attr('refX', 6)
-				.attr('markerWidth', 3)
-				.attr('markerHeight', 3)
-				.attr('orient', 'auto')
-				.append('svg:path')
+			svg.append("svg:defs").selectAll('marker')
+				.data(["end-arrow"])      // Different link/path types can be defined here
+				.enter().append("svg:marker")    // This section adds in the arrows
+				.attr("id", String)
+				.attr("viewBox", "0 -5 10 10")
+				//.attr("refX", 25)
+				.attr("markerWidth", 4)
+				.attr("markerHeight", 4)
+				.attr("orient", "auto")
+				.append("svg:path")
 				.attr('d', 'M 0 -5 L 10 0 L 0 5 z')
-				.attr('fill', '#000');
 
-			svg.append('svg:defs').append('svg:marker')
-				.attr('id', 'start-arrow')
-				.attr('viewBox', '0 -5 10 10')
-				.attr('refX', 6)
-				.attr('markerWidth', 3)
-				.attr('markerHeight', 3)
-				.attr('orient', 'auto')
-				.append('svg:path')
-				.attr('d', 'M 10 -5 L 0 0 L 10 5 z')
-				.attr('fill', '#000');
+			svg.append("svg:defs").selectAll('marker')
+				.data(["start-arrow"])      // Different link/path types can be defined here
+				.enter().append("svg:marker")    // This section adds in the arrows
+				.attr("id", String)
+				.attr("viewBox", "0 -5 10 10")
+				.attr("refX", 5)
+				.attr("markerWidth", 4)
+				.attr("markerHeight", 4)
+				.attr("orient", "auto")
+				.append("svg:path")
+				.attr('d', 'M 10 -5 L 0 0 L 10 5 z');
 
 			// handles to link and node element groups
 			path = svg.append('svg:g').selectAll('path'),
@@ -355,10 +337,6 @@ var QDR = (function (QDR) {
 				var nodeResults = onode['.router'].results[0];
 				var nodeAttributes = onode['.router'].attributeNames;
 
-                //convert parallel arrays into array of objects
-                //var nv = [].map.call(nodeAttributes,
-                //    function (attr, idx) { return {attributeName: attr, attributeValue: nodeResults[idx]}});
-
                 for (var i=0; i<QDR.currentAttributes.length; ++i) {
                     var idx = nodeAttributes.indexOf(QDR.currentAttributes[i].attributeName);
                     if (idx > -1) {
@@ -370,27 +348,32 @@ var QDR = (function (QDR) {
                     }
                 }
 			}
+            QDR.topoForm = "general";
+            $scope.$apply();
 		}
 
-		function updateConnForm (d) {
+		function updateConnForm (d, resultIndex) {
 			var onode = QDRService.topology._nodeInfo[d.key];
 			if (onode) {
-				var nodeResults = onode['.connection'].results[d.resultIndex];
+				var nodeResults = onode['.connection'].results[resultIndex];
 				var nodeAttributes = onode['.connection'].attributeNames;
 
                 for (var i=0; i<QDR.connAttributes.length; ++i) {
-                    //var val = valFor(aAr, vAr, key) {
-
                     var idx = nodeAttributes.indexOf(QDR.connAttributes[i].attributeName);
                     if (idx > -1) {
+                    	try {
                         if (QDR.connAttributes[i].attributeValue != nodeResults[idx]) {
                             // highlight the changed data
                             QDR.connAttributes[i].attributeValue = nodeResults[idx];
 
                         }
+                        } catch (err) {
+                        }
                     }
                 }
 			}
+             QDR.topoForm = "connections";
+            $scope.$apply();
 		}
 
         function getNodeIndex (_id) {
@@ -403,24 +386,23 @@ var QDR = (function (QDR) {
             return 0;
         }
 
-        function getLink (_source, _target) {
+        function getLink (_source, _target, dir) {
             for (var i=0; i < links.length; i++) {
-                if (links[i].source == _source && links[i].target == _target) return i;
+                if (links[i].source == _source && links[i].target == _target) {
+                	return i;
+                }
 				// same link, just reversed
                 if (links[i].source == _target && links[i].target == _source) {
-                	links[i].source = _source;
-                	links[i].target = _target;
-                	var lval = links[i].left;
-                	links[i].left = links[i].right;
-                	links[i].right = lval;
-                 	return i;
+                	return -i;
 				}
             }
+
+            QDR.log.debug("creating new link (" + (links.length) + ") between " + nodes[_source].name + " and " + nodes[_target].name);
             var link = {
                 source: _source,
                 target: _target,
-                left: false,
-                right: false
+                left: dir != "out",
+                right: dir == "out"
             };
             return links.push(link) - 1;
         }
@@ -438,16 +420,23 @@ var QDR = (function (QDR) {
 	        path.attr('d', function (d) {
 				//QDR.log.debug("in tick for d");
 				//console.dump(d);
+
 	            var deltaX = d.target.x - d.source.x,
 	                deltaY = d.target.y - d.source.y,
 	                dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY),
 	                normX = deltaX / dist,
-	                normY = deltaY / dist,
-	                sourcePadding = d.left ? radius + 2 + 5 : radius + 2,
-	                targetPadding = d.right ? radius + 2 + 5 : radius + 2,
-	                sourcePadding = 0,
-	                targetPadding = 0,
-	                sourceX = d.source.x + (sourcePadding * normX),
+	                normY = deltaY / dist;
+	                var sourcePadding, targetPadding;
+	                if (d.target.nodeType == "inter-router") {
+						//                       right arrow  left line start
+						sourcePadding = d.left ? radius + 8  : radius;
+						//                      left arrow      right line start
+						targetPadding = d.right ? radius + 16 : radius;
+	                } else {
+						sourcePadding = d.left ? radiusNormal + 18  : radiusNormal;
+						targetPadding = d.right ? radiusNormal + 16 : radiusNormal;
+	                }
+	                var sourceX = d.source.x + (sourcePadding * normX),
 	                sourceY = d.source.y + (sourcePadding * normY),
 	                targetX = d.target.x - (targetPadding * normX),
 	                targetY = d.target.y - (targetPadding * normY);
@@ -462,28 +451,6 @@ var QDR = (function (QDR) {
 	            force.stop();
 	        }
 	    }
-
-/*
-".router.node": {
-    "results": [
-        ["QDR.A", null],
-        ["QDR.B", null],
-        ["QDR.D", "QDR.A"],
-        ["QDR.C", "QDR.A"],
-        ["QDR.Y", "QDR.A"]
-    ],
-    "attributeNames": ["routerId", "nextHop"]
-}
-*/
-
-        // given an attribute name array, find the value at the same index in the values array
-        function valFor(aAr, vAr, key) {
-            var idx = aAr.indexOf(key);
-            if ((idx > -1) && (idx < vAr.length)) {
-                return vAr[idx];
-            }
-            return null;
-        }
 
         // highlight the paths between the selected node and the hovered node
         function findNextHopNode(from, d) {
@@ -507,10 +474,10 @@ var QDR = (function (QDR) {
             var aAr = sInfo['.router.node'].attributeNames;
             var vAr = sInfo['.router.node'].results;
             for (var hIdx=0; hIdx<vAr.length; ++hIdx) {
-                var addrT = valFor(aAr, vAr[hIdx], "routerId" );
+                var addrT = QDRService.valFor(aAr, vAr[hIdx], "routerId" );
                 if (addrT == d.name) {
                     //QDR.log.debug("found " + d.name + " at " + hIdx);
-                    var nextHop = valFor(aAr, vAr[hIdx], "nextHop");
+                    var nextHop = QDRService.valFor(aAr, vAr[hIdx], "nextHop");
                     //QDR.log.debug("nextHop was " + nextHop);
                     return (nextHop == null) ? nodeFor(addrT) : nodeFor(nextHop);
                 }
@@ -533,10 +500,11 @@ var QDR = (function (QDR) {
                 if ((links[i].source == target) && (links[i].target == source))
                     return links[i];
             }
-            QDR.log.debug("failed to find a link between ");
-            console.dump(source);
-            QDR.log.debug(" and ");
-            console.dump(target);
+            // the selected node was a client/broker
+            //QDR.log.debug("failed to find a link between ");
+            //console.dump(source);
+            //QDR.log.debug(" and ");
+            //console.dump(target);
             return null;
         }
 	    // update graph (called when needed)
@@ -549,28 +517,59 @@ var QDR = (function (QDR) {
 
 			// update existing links
   			path.classed('selected', function(d) { return d === selected_link; })
-  			    .classed('highlighted', function(d) { return d.highlighted; } )
-    			.attr('marker-start', function(d) { return d.left ? 'url(#start-arrow)' : ''; })
-    			.attr('marker-end', function(d) { return d.right ? 'url(#end-arrow)' : ''; });
+  			    .classed('highlighted', function(d) { return d.highlighted; } );
 
 			// add new links
 			path.enter().append('svg:path')
 				.attr('class', 'link')
-				.classed('selected', function(d) { return d === selected_link; })
-				.attr('marker-start', function(d) { return d.left ? 'url(#start-arrow)' : ''; })
-				.attr('marker-end', function(d) { return d.right ? 'url(#end-arrow)' : ''; })
-				.on('mousedown', function(d) {
-				  if(d3.event.ctrlKey) return;
+				.attr('marker-start', function(d) { return d.left ? 'url(/dispatch/topology#start-arrow)' : ''; })
+				.attr('marker-end', function(d) { return d.right ? 'url(/dispatch/topology#end-arrow)' : ''; })
 
-				  // select link
-				  mousedown_link = d;
-				  if(mousedown_link === selected_link) 
-				    selected_link = null;
-				  else 
-				    selected_link = mousedown_link;
-				  selected_node = null;
-				  mousedown_node = null;
-				  restart();
+	            .on('mouseover', function (d) {
+				  if(d3.event.ctrlKey) return;
+				        //QDR.log.debug("showing connections form");
+					var resultIndex = 0; // the connection to use
+                    var left = d.left ? d.target : d.source;
+					// right is the node that the arrow points to, left is the other node
+					var right = d.left ? d.source : d.target;
+					var onode = QDRService.topology._nodeInfo[left.key];
+					// loop through all the connections for left, and find the one for right
+					if (!onode)
+						return;
+                    // update the info dialog for the link the mouse if over
+                    if (!selected_node && !selected_link) {
+                        for (resultIndex=0; resultIndex < onode['.connection'].results.length; ++resultIndex) {
+                            var conn = onode['.connection'].results[resultIndex];
+                            /// find the connection whose container is the right's name
+                            var name = QDRService.valFor(onode['.connection'].attributeNames, conn, "container");
+                            if (name == right.name) {
+                                break;
+                            }
+                        }
+                        // did not find connection. this is a connection to a non-interrouter node
+                        if (resultIndex === onode['.connection'].results.length) {
+                            // use the non-interrouter node's connection info
+                            left = d.target;
+                            resultIndex = left.resultIndex;
+                        }
+                        updateConnForm(left, resultIndex);
+                    }
+
+					// select link
+					mousedown_link = d;
+					selected_link = mousedown_link;
+					//selected_node = null;
+					//mousedown_node = null;
+					restart();
+				})
+	            .on('mouseout', function (d) {
+					if(d3.event.ctrlKey) return;
+				        //QDR.log.debug("showing connections form");
+					// select link
+					selected_link = null;
+					//selected_node = null;
+					//mousedown_node = null;
+					restart();
 				});
 
 	        // remove old links
@@ -583,15 +582,14 @@ var QDR = (function (QDR) {
 	            return d.id;
 	        });
 
-	        // update existing nodes (reflexive & selected visual states)
+	        // update existing nodes selected visual states)
 	        circle.selectAll('circle')
 	            .style('fill', function (d) {
-	            	sColor = colors[d.nodeType];
-	            return (d === selected_node) ? d3.rgb(sColor).brighter().toString() : d3.rgb(sColor);
-	        })
-	            .classed('reflexive', function (d) {
-	            return d.reflexive;
-	        });
+	            	var sColor = colors[d.nodeType];
+	                return (d === selected_node) ? d3.rgb(sColor).brighter().toString() : d3.rgb(sColor);})
+	            .classed('selected', function (d) {
+	                return (d === selected_node)}
+	        );
 
 	        // add new nodes
 	        var g = circle.enter().append('svg:g');
@@ -602,39 +600,36 @@ var QDR = (function (QDR) {
 	            	return radii[d.nodeType];
 	            })
 	            .style('fill', function (d) {
-	                sColor = colors[d.nodeType];
+	                var sColor = colors[d.nodeType];
 	                return (d === selected_node) ? d3.rgb(sColor).brighter().toString() : d3.rgb(sColor);
 	            })
 	            .style('stroke', function (d) {
-	                sColor = colors[d.nodeType];
+	                var sColor = colors[d.nodeType];
 	                return d3.rgb(sColor).darker().toString();
 	            })
-	            .classed('reflexive', function (d) {
-	            return d.reflexive;
-	            })
 	            .on('mouseover', function (d) {
-                    if (d.nodeType === 'inter-router') {
-				        //QDR.log.debug("showing general form");
-                        QDR.topoForm = "general";
-				        updateNodeForm(d);
-				    } else if (d.nodeType === 'normal' || d.nodeType === 'on-demand') {
-				        //QDR.log.debug("showing connections form");
-                        QDR.topoForm = "connections";
-                        updateConnForm(d);
-				    }
-				    $scope.$apply();
-				        
+					if (!selected_node) {
+                        if (d.nodeType === 'inter-router') {
+                            //QDR.log.debug("showing general form");
+                            updateNodeForm(d);
+                        } else if (d.nodeType === 'normal' || d.nodeType === 'on-demand') {
+                            //QDR.log.debug("showing connections form");
+                            updateConnForm(d, d.resultIndex);
+                        }
+					}
+
 	                if (d === mousedown_node) 
 	                    return;
-	                if (d === selected_node) 
-	                    return;
-	                if (!selected_node) {
-	                    return;
-	                }
+	                //if (d === selected_node)
+	                //    return;
 	                // enlarge target node
 	                d3.select(this).attr('transform', 'scale(1.1)');
                     // highlight the next-hop route from the selected node to this node
                     mousedown_node = null;
+
+	                if (!selected_node) {
+	                    return;
+	                }
                     setTimeout(nextHop, 1, selected_node, d);
 	            })
 	            .on('mouseout', function (d) {
@@ -644,24 +639,33 @@ var QDR = (function (QDR) {
                     for (var i=0; i<links.length; ++i) {
                         links[i]['highlighted'] = false;
                     }
-                    //QDR.topoForm = "";
-			        $scope.$apply();
                     restart();
 	            })
 	            .on('mousedown', function (d) {
 	                if (d3.event.ctrlKey)
 	                    return;
-				    //QDR.log.debug("onmouse down past ctrlKey");
-	                // select node
 	                mousedown_node = d;
-	                if (mousedown_node === selected_node)
+	                if (mousedown_node === selected_node) {
 	                    selected_node = null;
-	                else
+       	                QDR.topoFormSelected = "";
+	                }
+	                else {
 	                    selected_node = mousedown_node;
+                        if (d.nodeType === 'inter-router') {
+                            //QDR.log.debug("showing general form");
+                            updateNodeForm(d);
+           	                QDR.topoFormSelected = "general";
+                        } else if (d.nodeType === 'normal' || d.nodeType === 'on-demand') {
+                            //QDR.log.debug("showing connections form");
+                            updateConnForm(d, d.resultIndex);
+           	                QDR.topoFormSelected = "connections";
+                        }
+	                }
 	                selected_link = null;
                     for (var i=0; i<links.length; ++i) {
                         links[i]['highlighted'] = false;
                     }
+                    $scope.$apply();
 	                restart(false);
 	            })
 	            .on('mouseup', function (d) {
@@ -763,19 +767,24 @@ var QDR = (function (QDR) {
         });
 
 		function hasChanged () {
-			if (Object.keys(QDRService.topology._nodeInfo).length != savedKeys.length)
+			if (Object.keys(QDRService.topology._nodeInfo).length != Object.keys(savedKeys).length)
 				return true;
 			for (var key in QDRService.topology._nodeInfo) {
-				if (savedKeys.indexOf(key) == -1) {
-					//QDR.log.debug("could not find " + key + " in ");
-					//console.dump(savedKeys);
-					return true;
-				}
+                // if this node isn't in the saved node list
+                if (!savedKeys.hasOwnProperty(key))
+                    return true;
+                // if the number of connections for this node chaanged
+                if (QDRService.topology._nodeInfo[key]['.connection'].results.length != savedKeys[key])
+                    return true;
 			}
 			return false;
 		};
 		function saveChanged () {
-			savedKeys = Object.keys(QDRService.topology._nodeInfo);
+            savedKeys = {};
+            // save the number of connections per node
+		    for (var key in QDRService.topology._nodeInfo) {
+		        savedKeys[key] = QDRService.topology._nodeInfo[key]['.connection'].results.length;
+		    }
 			QDR.log.debug("saving current keys");
 			console.dump(savedKeys);
 		};
@@ -792,12 +801,14 @@ var QDR = (function (QDR) {
         // the scope
         $scope.$on("$destroy", function( event ) {
    			QDR.log.debug("scope on destroy");
+            QDRService.stopUpdating();
             QDRService.delUpdatedAction("topology");
 			d3.select("#SVG_ID").remove();
         });
-        
+
 		initForceGraph();
 		saveChanged();
+        QDRService.startUpdating();
 
   };
 

@@ -64,6 +64,7 @@ var QDR = (function(QDR) {
    * The key used to fetch our settings from local storage
    */
   QDR.SETTINGS_KEY = 'QDRSettings';
+  QDR.LAST_LOCATION = "QDRLastLocation";
 
   /**
    * @property module
@@ -76,14 +77,20 @@ var QDR = (function(QDR) {
   // set up the routing for this plugin
   QDR.module.config(function($routeProvider) {
     $routeProvider
-    .when('/', {
+      .when('/', {
         templateUrl: QDR.templatePath + 'qdrConnect.html'
-      })
+        })
         .when('/topology', {
           templateUrl: QDR.templatePath + 'qdrTopology.html'
         })
         .when('/list', {
           templateUrl: QDR.templatePath + 'qdrList.html'
+        })
+        .when('/schema', {
+          templateUrl: QDR.templatePath + 'qdrSchema.html'
+        })
+        .when('/charts', {
+          templateUrl: QDR.templatePath + 'qdrCharts.html'
         })
         .when('/connect', {
           templateUrl: QDR.templatePath + 'qdrConnect.html'
@@ -92,13 +99,15 @@ var QDR = (function(QDR) {
 
   // one-time initialization happens in the run function
   // of our module
-  QDR.module.run(function(workspace, viewRegistry, localStorage, QDRService, $rootScope, $location) {
+  QDR.module.run(function(workspace, viewRegistry, localStorage, QDRService, QDRChartService, dialogService, $rootScope, $location) {
     // let folks know we're actually running
     QDR.log.info("plugin running");
 
     Core.addCSS(QDR.cssPath + 'plugin.css');
     Core.addCSS(QDR.cssPath + 'qdrTopology.css');
     Core.addCSS(QDR.cssPath + 'json-formatter-min.css');
+    Core.addCSS(QDR.cssPath + 'jquery-minicolors.css');
+
 
     // tell hawtio that we have our own custom layout for
     // our view
@@ -116,16 +125,28 @@ var QDR = (function(QDR) {
     
     QDRService.initProton();
     var settings = angular.fromJson(localStorage[QDR.SETTINGS_KEY]);
+    var lastLocation = localStorage[QDR.LAST_LOCATION];
+    if (!angular.isDefined(lastLocation))
+        lastLocation = "/topology";
     if (settings && settings.autostart) {
       QDR.log.debug("Settings.autostart set, starting QDR connection");
       QDRService.addConnectAction(function() {
         Core.notification('info', "Connected to QDR Server");
-        $location.path("/topology");
+        QDRChartService.init(); // initialize charting service after we are connected
+
+        $location.path(lastLocation);
 
         Core.$apply($rootScope);
       });
       QDRService.connect(settings);
     }
+
+    $rootScope.$on('$routeChangeSuccess', function() {
+        localStorage[QDR.LAST_LOCATION] = $location.$$path;
+
+        console.log("should save " + $location.$$path);
+    });
+
 
   });
 
@@ -140,6 +161,6 @@ hawtioPluginLoader.addModule(QDR.pluginName);
 //hawtioPluginLoader.addModule('luegg.directives');
 hawtioPluginLoader.addModule('jsonFormatter');
 hawtioPluginLoader.addModule('ngGrid');
-
-
-
+hawtioPluginLoader.addModule('dialogService');
+hawtioPluginLoader.addModule('ui.slider');
+hawtioPluginLoader.addModule('minicolors');

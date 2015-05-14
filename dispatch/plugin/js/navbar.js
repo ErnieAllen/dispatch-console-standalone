@@ -13,12 +13,6 @@ var QDR = (function (QDR) {
    */
   QDR.breadcrumbs = [
     {
-      content: '<i class="icon-comments"></i> Main',
-      title: "Connect to Router",
-      isValid: function (QDRService) { return false; }, //QDRService.isConnected(); },
-      href: "#/main"
-    },
-    {
         content: '<i class="icon-cogs"></i> Connect',
         title: "Connect to a router",
         isValid: function (QDRService) { return true; },
@@ -35,6 +29,20 @@ var QDR = (function (QDR) {
         title: "View router nodes as a list",
         isValid: function (QDRService) { return QDRService.isConnected(); },
         href: "#/list"
+      },
+    {
+        content: '<i class="icon-bar-chart"></i> Charts',
+        title: "View charts",
+        isValid: function (QDRService, $location) { return QDRService.isConnected(); },
+        href: "#/charts"
+    },
+    {
+        content: '<i class="icon-align-left"></i> Schema',
+        title: "View dispatch schema",
+        isValid: function (QDRService) { return QDRService.isConnected(); },
+        href: "#/schema",
+        right: true
+
       }
   ];
   /**
@@ -46,7 +54,7 @@ var QDR = (function (QDR) {
    * The controller for this plugin's navigation bar
    *
    */
-  QDR.NavBarController = function($scope, QDRService, $location) {
+  QDR.NavBarController = function($scope, QDRService, QDRChartService, $location) {
 
     if (($location.path().startsWith("/main") || $location.path().startsWith("/topology") )
     && !QDRService.isConnected()) {
@@ -61,12 +69,23 @@ var QDR = (function (QDR) {
     $scope.breadcrumbs = QDR.breadcrumbs;
 
     $scope.isValid = function(link) {
-      return link.isValid(QDRService);
+      return link.isValid(QDRService, $location);
     };
 
     $scope.isActive = function(href) {
         return href.split("#")[1] == $location.path();
     };
+
+    $scope.isRight = function (link) {
+        return angular.isDefined(link.right);
+    };
+
+    $scope.hasChart = function (link) {
+        if (link.href == "#/charts") {
+            return QDRChartService.charts.some(function (c) { return c.dashboard });
+        }
+
+    }
   };
 
   return QDR;

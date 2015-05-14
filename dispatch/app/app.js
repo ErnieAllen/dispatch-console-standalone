@@ -16281,6 +16281,7 @@ var Core;
             }
         };
         $scope.loggedIn = function () {
+            return true;
             return userDetails.username !== null && userDetails.username !== 'public';
         };
         $scope.showLogout = function () {
@@ -16339,6 +16340,8 @@ var Core;
             $scope.showPrefs = false;
         });
         $scope.$on('$routeChangeStart', function (event, args) {
+            if (typeof args.params == 'undefined')
+                return;
             if ((!args.params || !args.params.pref) && $scope.showPrefs) {
                 $scope.showPrefs = false;
             }
@@ -17946,6 +17949,7 @@ var Core;
                 setTimeout(function () {
                     $scope.panels = preferencesRegistry.getTabs();
                     Core.log.debug("Panels: ", $scope.panels);
+                    console.dump($scope.panels);
                     Core.$apply($scope);
                 }, 50);
             }
