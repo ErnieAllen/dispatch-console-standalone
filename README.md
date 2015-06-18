@@ -22,4 +22,6 @@ To run the web console:
 - connect to node.js proxy
 
 Notes:
-To install the javascript bindings with proton you can either build them with proton or just copy 
+To install the javascript bindings with proton you can either build them with proton or just expand the pre-built node_modules.tar.gz into the rh-qpid-proton/examples/javascript/messenger dir.
+If you choose to build them with proton, you'll need to install emscripten before you run cmake for proton.
+
