@@ -30,8 +30,10 @@ If you choose to build them with proton, you'll need to install emscripten befor
 (3) To start a network of routers, unzip the config_6.tar.gz from the git repository. Modify the ./startall script to point to your dispatch router build. Run ./startall
 
 (4) To start the node.js proxy:
+`
 cd ~/rh-qpid-proton/examples/javascript/messenger
 node proxy.js &
+`
 This will start the proxy listening to ws traffic on port 5673 and translating it to tcp on port 5672. The QDR.X router is listening on port 5672.
 
 
