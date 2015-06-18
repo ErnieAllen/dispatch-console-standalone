@@ -128,11 +128,13 @@ var QDR = (function(QDR) {
                     selectedRowIndex = i;
                 for (var j=0; j<attributeNames.length; ++j) {
                     var col = attributeNames[j];
-                    row[col] = {value: record[j], type: undefined};
+                    row[col] = {value: record[j], type: undefined, graph: false};
                     if (ent) {
                         var att = ent.attributes[col];
                         if (att) {
                             row[col] = {value: record[j], type: att.type};
+                            if (att.graph)
+                                row[col]["graph"] = true;
                         }
                     }
                 }
@@ -211,7 +213,8 @@ var QDR = (function(QDR) {
                                     attributeValue: pretty(rowItem.entity[name].value),
                                     type: rowItem.entity[name].type,
                                     name: name,
-                                    rawValue: rowItem.entity[name].value} )
+                                    rawValue: rowItem.entity[name].value,
+                                    graph: rowItem.entity[name].graph} )
                 }
                 setTimeout(updateDetails, 10, details);
             }
@@ -236,7 +239,7 @@ var QDR = (function(QDR) {
             width: '50%',
              field: 'attributeName',
              displayName: 'Attribute',
-             cellTemplate: '<div class="listAttrName">{{row.entity[col.field]}}<i ng-click="addToGraph(row.entity)" ng-class="{\'active\': isFieldGraphed(row.entity), \'icon-bar-chart\': row.entity.type == \'integer\' }"></i></div>'
+             cellTemplate: '<div class="listAttrName">{{row.entity[col.field]}}<i ng-click="addToGraph(row.entity)" ng-class="{\'active\': isFieldGraphed(row.entity), \'icon-bar-chart\': row.entity.graph == true }"></i></div>'
          },
          {
             width: '50%',
