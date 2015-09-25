@@ -128,14 +128,14 @@ var QDR = (function(QDR) {
     var lastLocation = localStorage[QDR.LAST_LOCATION];
     if (!angular.isDefined(lastLocation))
         lastLocation = "/topology";
+    QDRService.addConnectAction(function() {
+      QDRChartService.init(); // initialize charting service after we are connected
+    });
     if (settings && settings.autostart) {
       QDR.log.debug("Settings.autostart set, starting QDR connection");
       QDRService.addConnectAction(function() {
         Core.notification('info', "Connected to QDR Server");
-        QDRChartService.init(); // initialize charting service after we are connected
-
         $location.path(lastLocation);
-
         Core.$apply($rootScope);
       });
       QDRService.connect(settings);

@@ -151,7 +151,7 @@ var QDR = (function(QDR) {
         self.topology.get();
         self.stop = setInterval(function() {
             self.topology.get();
-        }, 10000);
+        }, 2000);
     },
     stopUpdating: function () {
         if (angular.isDefined(self.stop)) {
@@ -196,6 +196,7 @@ var QDR = (function(QDR) {
 
       initProton: function() {
         //QDR.log.debug("*************QDR init proton called ************");
+        proton.websocket['subprotocol'] = "binary,AMQPWSB10";    // binary is 1st so websockify can connect
         self.messenger = new proton.Messenger();
         self.msgReceived = new proton.Message();
         self.msgSend = new proton.Message();
@@ -482,7 +483,7 @@ The response looks like:
       },
 
       makeMgmtCalls: function (id) {
-            var keys = [".router", ".connection", ".router.node"];
+            var keys = [".router", ".connection", ".router.node", ".router.link"];
             $.each(keys, function (i, key) {
                 self.topology.expect(id, key);
                 self.getNodeInfo(id, key, [], self.topology.addNodeInfo);
@@ -605,6 +606,7 @@ The response looks like:
       },
 
       connect: function(options) {
+        // override the subprotocol string to allow generic servers to connect
         self.options = options;
         self.topologyInitialized = false;
         if (!self.subscribed) {

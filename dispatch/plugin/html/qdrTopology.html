@@ -17,9 +17,19 @@
         </div>
     </div>
     <div class="panel-adjacent canvas" ng-controller="QDR.TopologyController">
-        <div id="topology">
+            <label>
+                <input type="radio" ng-model="ology" value="topo">
+                Topology
+            </label>
+            <label>
+                <input type="radio" ng-model="ology" value="geo">
+                Geography
+            </label>
+
+        <div id="topology" class="animate-show" ng-show="ology == 'topo'">
             {{update()}}
         </div>
+        <div id="geology" class="animate-show" ng-hide="ology == 'topo'"></div>
 
     </div>
 </div>
