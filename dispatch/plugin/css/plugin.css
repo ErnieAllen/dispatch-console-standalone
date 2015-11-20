@@ -144,16 +144,16 @@ ul.qdrListNodes > li > span {
   z-index: 50;
 }
 
-div.listAttrName i.icon-bar-chart {
-    float: right;
-    margin: 8px 5px 5px 5px;
-    /*
-    margin-right: 2px;
-    */
-    /*border: 1px solid #AEAEAE; */
+div.listAttrName {
+    padding-top: 5px;
 }
 
-div.listAttrName i.icon-bar-chart.active, li.haschart i {
+div.listAttrName i.icon-bar-chart {
+    float: right;
+    margin: 5px;
+}
+
+div.listAttrName i.icon-bar-chart.active, div.hastip i.icon-bar-chart.active, li.haschart i {
     background-color: #AAFFAA;
 }
 
@@ -163,6 +163,10 @@ div#main div ul.nav li a:not(.btn) {
 
 div#main div ul.nav li.active a {
     background-color: #f0f0ff !important;
+}
+
+div#main.qdr {
+    margin-top: 44px !important;
 }
 
 div.charts-header {
@@ -209,7 +213,7 @@ div.chartContainer {
 div.d3Chart path {
     stroke: black;
     stroke-width: 1;
-    fill: #EEFFEE;
+	opacity: 0.5;
 }
 
 div.d3Chart path.line {
@@ -228,7 +232,7 @@ div.d3Chart path.line {
 .mo-guide {
     fill: none;
     stroke: #d0d0d0;
-    stroke-width: 1;
+    stroke-width: 2;
     stroke-dasharray: 3,3;
 }
 
@@ -236,17 +240,18 @@ div.d3Chart .title {
     text-decoration: underline;
 }
 
-.y.axis line, .y.axis path {
+
+.axis line, .axis path {
   fill: none;
   shape-rendering: crispEdges;
-  stroke-width: 4;
+  stroke-width: 1;
   stroke: #000000;
 }
 
-.y.axis line {
+.axis line {
   stroke: #C0C0C0;
   stroke-dasharray: 1,1;
-  stroke-width: 1;
+  opacity: 0.5;
 }
 
 .y.axis text, .x.axis text, .focus text, div.d3Chart .title {
@@ -266,10 +271,50 @@ div.d3Chart .title {
    fill: none;
    stroke: steelblue;
  }
+.focus .fo-table {
+	/* box-shadow: 2px 2px 3px #EEE; */
+}
 
 div.d3Chart {
     padding: 1em 0;
     border: 1px solid #C0C0C0;
+}
+
+div.d3Chart .axis path {
+	display: inherit;
+}
+.c3-circle {
+	display: none;
+}
+
+.fo-table {
+	border: 1px solid darkgray;
+	background-color: white;
+	font-size: .85em;
+}
+
+.fo-table td {
+	padding: 4px;
+	border-left: 1px solid darkgray;
+}
+.fo-table tr.detail td {
+	padding: 1px 4px;
+}
+.fo-title {
+	color: white;
+	background-color: darkgray;
+}
+
+.fo-table-legend {
+	width: 8px;
+	height: 8px;
+	border: 1px solid black;
+	margin: 0 4px;
+	display: inline-block;
+}
+
+svg .legend {
+	dominant-baseline: central;
 }
 
 div.chartContainer div.aChart {
@@ -403,3 +448,8 @@ div.tabbable ul.nav-tabs {
   margin-bottom: 0;
 }
 /* , .nav-tabs > .active > a:hover */
+
+ul.qdrTopoModes {
+    position: relative;
+    top: -10px;
+}

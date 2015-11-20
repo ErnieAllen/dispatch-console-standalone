@@ -2,15 +2,13 @@
     <div ng-show="hasCharts()">
         <div ng-repeat="chart in svgCharts" class="chartContainer">
             <p class="chartLabels">
-                <button ng-click="delChart(chart)" title="Delete">
-                    <i class="icon-trash"></i>
-                </button>
-                <button ng-click="editChart(chart)" title="Configure">
-                    <i class="icon-edit"></i>
-                </button>
+                <button ng-click="delChart(chart)" title="Delete"><i class="icon-trash"></i></button>
+                <button ng-click="editChart(chart)" title="Configure"><i class="icon-edit"></i></button>
+                <button ng-click="zoomChart(chart)" title="Zoom {{chart.zoomed ? 'in' : 'out'}}" ng-if="!chart.chart.request().nodeList"><i ng-class="chart.zoomed ? 'icon-zoom-in' : 'icon-zoom-out'"></i></button>
             </p><div style="clear:both"></div>
             <div id="{{chart.chart.id()}}" class="aChart d3Chart"></div>
         </div>
+        <div ng-init="chartsLoaded()"></div>
     </div>
     <div ng-hide="hasCharts()" class="centered">
         There are no charts. To add charts to this page, click on a <i class="icon-bar-chart"></i> icon on the <button ng-click="showListPage()"><i class="icon-list "></i> List</button> page.

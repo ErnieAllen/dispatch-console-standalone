@@ -24,7 +24,9 @@ var QDR = (function (QDR) {
     $scope.svgCharts = [];
     // create an svg object for each chart
     QDRChartService.charts.filter(function (chart) {return chart.dashboard}).each(function (chart) {
-        $scope.svgCharts.push(new QDRChartService.AreaChart(chart, $location.$$path));
+        var svgChart = new QDRChartService.AreaChart(chart, $location.$$path)
+        svgChart.zoomed = false;
+        $scope.svgCharts.push(svgChart);
     })
 
     // redraw the charts every second
@@ -32,11 +34,16 @@ var QDR = (function (QDR) {
         $scope.svgCharts.each(function (svgChart) {
             svgChart.tick(svgChart.chart.id()); // on this page we are using the chart.id() as the div id in which to render the chart
         })
-        updateHandle = setTimeout(updateCharts, 1000);
+        updateHandle = setTimeout(updateCharts, 1100);
     }
-    // start the update loop
-    updateCharts();
+	$scope.chartsLoaded = function () {
+		setTimeout(updateCharts, 0);
+	}
 
+	$scope.zoomChart = function (chart) {
+		chart.zoomed = !chart.zoomed;
+		chart.zoom(chart.chart.id(), chart.zoomed);
+	}
     $scope.showListPage = function () {
         $location.path("/list");
     };

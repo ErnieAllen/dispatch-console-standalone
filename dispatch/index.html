@@ -2,7 +2,10 @@
 <html ng-csp>
 
 <head>
-    <script type="text/javascript" src="http://d3js.org/d3.v2.js"></script>
+<!--    <script type="text/javascript" src="http://d3js.org/d3.v2.js"></script> -->
+    <!--
+        <script src="bower_components/d3/d3.min.js"></script>
+    -->
 
     <script type="text/javascript">
         var base = window.location.pathname.split('/', 2)[1];
@@ -15,7 +18,7 @@
 
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Dispatch router</title>
+    <title>hawtio</title>
     <!-- bower:css -->
     <link rel="stylesheet" href="bower_components/bootstrap/docs/assets/css/bootstrap.css" />
     <link rel="stylesheet" href="bower_components/Font-Awesome/css/font-awesome.css" />
@@ -45,7 +48,9 @@
     <link rel="stylesheet" href="css/toggle-switch.css" type="text/css"/>
     <link rel="stylesheet" href="css/metrics-watcher-style.css" type="text/css"/>
     <link rel="stylesheet" href="css/site-base.css" type="text/css"/>
-    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.24/themes/smoothness/jquery-ui.css">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.8.24/themes/smoothness/jquery-ui.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.tipsy/1.0.2/jquery.tipsy.css" type="text/css"/>
+    <!--    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.24/themes/smoothness/jquery-ui.css"> --<
 
 
     <!-- endbuild -->
@@ -60,6 +65,8 @@
 
     <!-- Distro customisations -->
     <link rel="stylesheet" href="css/vendor.css" type="text/css"/>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.10/c3.min.css" type="text/css"/>
 
     <script type="text/ng-template" id="logClipboardTemplate">
         <!--
@@ -86,72 +93,120 @@
         div.log-stack-trace p:nth-child(odd) {
           background: #f3f3f3;
         }
-
         </style>
         -->
     </script>
 </head>
 
 <body>
+<div id="log-panel" style="bottom: 110%" ng-controller="Core.ConsoleController">
+    <div>
+        <ul id="log-panel-statements"></ul>
+        <div id="close" log-toggler>
+            <i class="icon-chevron-up"></i>
+        </div>
+        <div id="copy">
+            <i class="span2 icon-copy" title="Click to copy log to clipboard"
+               zero-clipboard
+               use-callback="setHandler(clip)"></i>
+            <i class="span3 icon-trash" title="Click to clear log"
+               zero-clipboard
+               use-callback="setHandler(clip)"></i>
+        </div>
+    </div>
+</div>
+
 <div id="main-body" ng-controller="Core.AppController" style="display: none;">
     <!--  navbar-inverse -->
     <div id="main-nav" class="navbar navbar-fixed-top" ng-show="!fullScreen()" ng-controller="Core.NavBarController">
 
         <div class="navbar-inner main-nav-lower" ng-show="!login()">
             <div class="container">
-                <ul class="nav" hawtio-auto-dropdown>
-                    <li ng-show="loggedIn() && (perspectives.length > 1 || recentConnections.length)"
-                        class="dropdown perspective-selector">
-                        <a href="#" class="dropdown-toggle">
-                            <hawtio-icon config="perspectiveDetails.perspective.icon"></hawtio-icon>
-                            <span ng-bind="perspectiveDetails.perspective.label || 'Perspective'"></span>
-                            <span ng-show="perspectives.length > 1" class="caret"></span>
-                        </a>
-                        <div class="dropdown-menu">
-                            <div ng-show="perspectives.length > 1">
-                                <p>Perspectives</p>
-                                <ul class="unstyled">
-                                    <li ng-repeat="perspective in perspectives track by $index">
-                                        <a href=""
-                                           ng-click="switchPerspective(perspective)"
-                                           ng-hide="perspectiveDetails.perspective.id === perspective.id"
-                                           data-placement="bottom">
-                                            <hawtio-icon config="perspective.icon"></hawtio-icon>
-                                            {{perspective.label}}</a>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div ng-show="recentConnections.length">
-                                <p>Recent Connections</p>
-                                <ul class="unstyled">
-                                    <li>
-                                        <a href=""
-                                           ng-click="goHome()">Console</a>
-                                    </li>
-                                    <li ng-repeat="connection in recentConnections track by $index">
-                                        <a href=""
-                                           ng-click="openConnection(connection)">{{connection}}</a>
-                                    </li>
-                                    <li class="clear-recent">
-                                        <a href=""
-                                           ng-click="clearConnections()">Clear Recent</a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </li>
-                    <li ng-repeat="nav in topLevelTabs track by $index"
-                        ng-class="{active : isActive(nav)}"
-                        ng-show="isValid(nav)">
-                        <a ng-href="{{link(nav)}}" title="{{nav.title}}" data-placement="bottom" ng-bind="nav.content">
-                        </a>
-                    </li>
-                    <li class="dropdown overflow" style="float: right !important; visibility: hidden;">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-chevron-down"></i></a>
-                        <ul class="dropdown-menu right"></ul>
-                    </li>
-                </ul>
+                <div class="pull-right">
+                    <ul class="nav nav-tabs pull-right">
+                        <li ng-show="loggedIn() && isCustomLinkSet() > 0 " class="dropdown">
+                            <a ng-href="#"
+                               title="{{navBarViewCustomLinks.dropDownLabel}}"
+                               data-placement="bottom"
+                               class="dropdown-toggle"
+                               data-toggle="dropdown">
+                                <i class="icon-user fixme"></i>&nbsp;&nbsp;<span>{{navBarViewCustomLinks.dropDownLabel}}</span>&nbsp;<span class="caret"></span>
+                            </a>
+                            <ul class="dropdown-menu right">
+                                <li ng-repeat="entry in navBarViewCustomLinks.list">
+                                    <a ng-href="{{entry.href}}"
+                                       ng-click="entry.action()"
+                                       title="{{entry.title}}">
+                                        <i class="{{entry.icon}}"></i>&nbsp;&nbsp;{{entry.title}}
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
 
+                        <li ng-show="loggedIn()">
+                            <a ng-href=""
+                               title="Show the logging console"
+                               data-placement="bottom"
+                               log-toggler>
+                                <i class="icon-desktop"></i>
+                            </a>
+                        </li>
+                        <li ng-show="loggedIn()" ng-class="{active : isActive('#/help')}">
+                            <a ng-href="{{link('#/help', true)}}"
+                               title="Read the help about how to use this console"
+                               data-placement="bottom">
+                                <i class="icon-question-sign"></i>
+                            </a>
+                        </li>
+
+                        <li ng-show="loggedIn()" class="dropdown">
+                            <a ng-href="#"
+                               title="Preferences {{showLogout() ? 'and log out' : ''}}"
+                               data-placement="bottom"
+                               class="dropdown-toggle"
+                               data-toggle="dropdown">
+                                <i class="icon-user fixme"></i>&nbsp;&nbsp;<span>{{getUsername()}}</span>&nbsp;<span class="caret"></span>
+                            </a>
+
+                            <ul class="dropdown-menu right">
+                                <li>
+                                    <a href="" ng-click="showPreferences()"
+                                       title="Edit your preferences"
+                                       data-placement="bottom">
+                                        <i class="icon-cogs fixme"></i> Preferences
+                                    </a>
+                                </li>
+                                <li ng-show="showLogout()">
+                                    <a href="" title="Log out" data-placement="bottom" ng-click="logout()">
+                                        <i class="icon-signout fixme"></i> Log out
+                                    </a>
+                                </li>
+                                <li>
+                                    <a ng-href="{{link('#/about', true)}}" title="About" data-placement="bottom">
+                                        <i class="icon-info"></i> About {{branding.name}}
+                                    </a>
+                                </li>
+
+                            </ul>
+                        </li>
+
+                        <li ng-hide="loggedIn()" ng-class="{active : isActive('#/login')}">
+                            <a ng-href="{{link('#/login', true)}}" title="Log in" data-placement="bottom">
+                                <i class="icon-user"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="pull-left">
+                    <ul class="nav">
+                        <li ng-repeat="nav in topLevelTabs track by $index"
+                            ng-class="{active : isActive(nav)}"
+                            ng-show="isValid(nav)">
+                            <a ng-href="{{link(nav)}}" title="{{nav.title}}" data-placement="bottom" ng-bind="nav.content">
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -162,7 +217,7 @@
             </div>
         </div>
     </div>
-    <div id="main" class="container-fluid ng-cloak qdr" style="margin-top: 42px !important;">
+    <div id="main" class="container-fluid ng-cloak qdr">
         <div ng-include src="'plugin/html/qdrLayout.html'"></div>
     </div>
 
@@ -215,20 +270,28 @@
 <script type="text/javascript" src="lib/html5shiv.js"></script>
 <![endif]-->
 
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/queue.v1.min.js"></script>
+<script src="http://d3js.org/topojson.v0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.10/c3.min.js"></script>
 <!-- build:js app/app.js -->
 
 <!-- bower:js -->
-<script src="bower_components/jquery/jquery.js"></script>
+<!-- <script src="bower_components/jquery/jquery.js"></script> -->
+<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script src="http://code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+
 <script src="bower_components/js-logger/src/logger.js"></script>
 <script src="bower_components/bootstrap/docs/assets/js/bootstrap.js"></script>
 <script src="bower_components/elastic.js/dist/elastic.min.js"></script>
 <script src="bower_components/underscore/underscore.js"></script>
+
 <!-- endbower -->
 
 <!--
 TODO add patch for dashboard until angular supports nested custom injections
 -->
-<script src="http://code.angularjs.org/1.1.5/angular.js"></script>
+<script src="https://code.angularjs.org/1.1.5/angular.min.js"></script>
 <!--<script type="text/javascript" src="lib/angular.js"></script>-->
 <script type="text/javascript" src="lib/angular-bootstrap.min.js"></script>
 <script type="text/javascript" src="lib/angular-resource.min.js"></script>
@@ -255,7 +318,8 @@ TODO add patch for dashboard until angular supports nested custom injections
 <script type="text/javascript" src="lib/ng-grid.min.js"></script>
 
 <!-- dyna tree -->
-<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.24/jquery-ui.js"></script>
+<script src="https://code.jquery.com/ui/1.8.24/jquery-ui.min.js"></script>
+<!-- <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.24/jquery-ui.js"></script> -->
 <!-- <script type="text/javascript" src="lib/jquery-ui.custom.min.js"></script> -->
 <script type="text/javascript" src="lib/jquery.cookie.js"></script>
 <script type="text/javascript" src="lib/jquery.dynatree.min.js"></script>
@@ -359,7 +423,7 @@ TODO add patch for dashboard until angular supports nested custom injections
 <script type="text/javascript" src="plugin/js/qdrCharts.js"></script>
 <script type="text/javascript" src="plugin/js/qdrPlugin.js"></script>
 <script type="text/javascript" src="plugin/js/qdrService.js"></script>
-<script type="text/javascript" src="plugin/js/qdrChartService.js"></script>
+<script type="text/javascript" src="plugin/js/qdrZChartService.js"></script>
 <script type="text/javascript" src="plugin/lib/dialog-service.js"></script>
 <script type="text/javascript" src="plugin/lib/slider.js"></script>
 <script type="text/javascript" src="plugin/lib/jquery-minicolors.min.js"></script>
@@ -367,7 +431,11 @@ TODO add patch for dashboard until angular supports nested custom injections
 <script type="text/javascript" src="plugin/js/qdrTopology.js"></script>
 <script type="text/javascript" src="plugin/js/settings.js"></script>
 <script type="text/javascript" src="plugin/lib/proton.js"></script>
-<script type="text/javascript" src="plugin/lib/json-formatter-min.js"></script>
+
+<script src="plugin/lib/json-formatter-min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tipsy/1.0.2/jquery.tipsy.min.js"></script>
+<script type="text/javascript" src="plugin/lib/tooltipsy.js"></script>
+
 
 <!-- Distro customisations -->
 </body>

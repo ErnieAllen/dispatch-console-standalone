@@ -97,7 +97,13 @@ var QDR = (function(QDR) {
         });
   });
 
-  // one-time initialization happens in the run function
+  QDR.module.config(['$compileProvider', function ($compileProvider) {
+	var cur = $compileProvider.urlSanitizationWhitelist();
+    $compileProvider.urlSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|blob):/);
+	cur = $compileProvider.urlSanitizationWhitelist();
+  }]);
+
+    // one-time initialization happens in the run function
   // of our module
   QDR.module.run(function(workspace, viewRegistry, localStorage, QDRService, QDRChartService, dialogService, $rootScope, $location) {
     // let folks know we're actually running

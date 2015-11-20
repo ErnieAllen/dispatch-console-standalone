@@ -181,7 +181,7 @@ var QDR = (function(QDR) {
 	         // binary, which is a right pain from an interoperability perspective.
              self.msgReceived.clear();;
 	         var t = self.messenger.get(self.msgReceived, true);
-	 		 //QDR.log.debug("pumpData incoming t was " + t);
+	         //QDR.log.debug("pumpData incoming t was " + t);
 	         self.correlator.resolve();
 	         self.messenger.accept(t);
 	         self.messenger.settle(t);
@@ -247,7 +247,20 @@ var QDR = (function(QDR) {
 		for (var id in ni) {
             nl.push(self.nameFromId(id));
         }
-        return nl;
+        return nl.sort();
+      },
+
+      nodeIdList: function() {
+        var nl = [];
+        // if we are in the middel of updating the topology
+        // then use the last known node info
+        var ni = self.topology._nodeInfo;
+        if (self.topology._gettingTopo)
+            ni = self.topology._lastNodeInfo;
+		for (var id in ni) {
+            nl.push(id);
+        }
+        return nl.sort();
       },
 
       nodeList: function () {
@@ -271,7 +284,6 @@ var QDR = (function(QDR) {
       },
 
       /*
-       *
        * send the management messages that build up the topology
        *
        *
@@ -283,19 +295,36 @@ var QDR = (function(QDR) {
         _expected: {},
         _timerHandle: null,
 
+        nodeInfo: function () {
+            return this._gettingTopo ? this._lastNodeInfo : this._nodeInfo;
+        },
+
         get: function () {
             if (this._gettingTopo)
                 return;
             if (!self.subscribed)
                 return;
+            this._lastNodeInfo = angular.copy(this._nodeInfo);
             this._gettingTopo = true;
+
             self.errorText = undefined;
             this.cleanUp(this._nodeInfo);
-            this._lastNodeInfo = angular.copy(this._nodeInfo);
             this._nodeInfo = {};
             this._expected = {};
 
-            self.getRemoteNodeInfo();
+            // get the list of nodes to query.
+            // once this completes, we will get the info for each node returned
+            self.getRemoteNodeInfo( function (response) {
+                //QDR.log.debug("got remote node list of ");
+                //console.dump(response);
+                if( Object.prototype.toString.call( response ) === '[object Array]' ) {
+                    // we expect a response for each of these nodes
+                    self.topology.wait(self.timeout);
+                    for (var i=0; i<response.length; ++i) {
+                        self.makeMgmtCalls(response[i]);
+                    }
+                };
+            });
         },
 
         cleanUp: function (obj) {
@@ -336,25 +365,27 @@ var QDR = (function(QDR) {
             var gotKeys = {};
             for (var id in this._nodeInfo) {
                 var onode = this._nodeInfo[id];
-                var CONN = '.connection';
+                var conn = onode['.connection'];
                 // get list of node names in the connection data
-                if (onode[CONN]) {
-                    var connectionResults = onode[CONN].results;
-                    for (var j=0; j < connectionResults.length; ++j) {
-                        var roleIndex = onode[CONN].attributeNames.indexOf('role');
-                        var containerIndex = onode[CONN].attributeNames.indexOf('container');
-                        if (roleIndex >=0 && containerIndex >= 0)
-                            if (connectionResults[j][roleIndex] == "inter-router")
-                                gotKeys[connectionResults[j][containerIndex]] = ""; // just add the key
-                    }
+                if (conn) {
+                    var containerIndex = conn.attributeNames.indexOf('container');
+                    var connectionResults = conn.results;
+                    if (containerIndex >= 0)
+                        for (var j=0; j < connectionResults.length; ++j) {
+                            // inter-router connection to a valid dispatch connection name
+                            gotKeys[connectionResults[j][containerIndex]] = ""; // just add the key
+                        }
                 }
             }
             // gotKeys now contains all the container names that we have received
-            return (
-                // one node responded and it doesn't connect to any other node (of course)
-                (Object.keys(gotKeys).length == 0 && Object.keys(this._nodeInfo).length == 1) ||
-                // the number of nodes that responded is the same as the referenced nodes
-                (Object.keys(gotKeys).length == Object.keys(this._nodeInfo).length));
+            // Are any of the keys that are still expected in the gotKeys list?
+            var keys = Object.keys(gotKeys);
+            for (var id in this._expected) {
+                var key = self.nameFromId(id);
+                if (key in keys)
+                    return false;
+            }
+            return true;
         },
             
         addNodeInfo: function (id, entity, values) {
@@ -453,37 +484,20 @@ The response looks like:
 
       },
 
-      getRemoteNodeInfo: function () {
+      getRemoteNodeInfo: function (callback) {
 	 	//QDR.log.debug("getRemoteNodeInfo called");
         var id;
         // first get the list of remote node names
 	 	self.correlator.request(
                 id = self.sendMgmtNodesQuery()
             ).then(id, function(response) {
-                //QDR.log.debug("got remote node list of ");
-                //console.dump(response);
-                if( Object.prototype.toString.call( response ) === '[object Array]' ) {
-                    // we expect a response for each of these nodes + the node we are connected to
-                    self.topology.wait(self.timeout);
-                    if (response.length == 0) {
-                        // there is only one node or the router network is unstable
-                        QDR.log.debug("got empty list from get-mgmt-nodes call");
-                        // make this call to trigger the done state
-                        self.topology.addNodeInfo(null);
-                    }
-                    for (var i=0; i<response.length; ++i) {
-                        self.makeMgmtCalls(response[i]);
-                    }
-                    // and finally, ask for the info for the node we are connected to
-                    // this is done last to avoid a premature ondone condition
-                    self.makeMgmtCalls(self.localNode);
-                };
+                callback(response);
                 self.topology.cleanUp(response);
             });
       },
 
       makeMgmtCalls: function (id) {
-            var keys = [".router", ".connection", ".router.node", ".router.link"];
+            var keys = [".router", ".connection", ".container", ".router.node", ".listener", ".router.link"];
             $.each(keys, function (i, key) {
                 self.topology.expect(id, key);
                 self.getNodeInfo(id, key, [], self.topology.addNodeInfo);
@@ -501,6 +515,65 @@ The response looks like:
             //self.topology.cleanUp(response);
         });
       },
+
+		getMultipleNodeInfo: function (nodeNames, entity, attrs, callback, selectedNodeId) {
+			var responses = {};
+			var gotNodesResult = function (nodeName, dotentity, response) {
+				responses[nodeName] = response;
+				if (Object.keys(responses).length == nodeNames.length) {
+					aggregateNodeInfo(nodeNames, entity, responses, callback, selectedNodeId);
+				}
+			}
+
+			var aggregateNodeInfo = function (nodeNames, entity, responses, callback) {
+				//QDR.log.debug("got all results for  " + entity);
+				// aggregate the responses
+				var newResponse = {};
+				var thisNode = responses[selectedNodeId];
+				newResponse['attributeNames'] = thisNode.attributeNames;
+				newResponse['results'] = thisNode.results;
+				newResponse['aggregates'] = [];
+				for (var i=0; i<thisNode.results.length; ++i) {
+					var result = thisNode.results[i];
+					var vals = [];
+					result.forEach( function (val) {
+						vals.push({sum: val, detail: []})
+					})
+					newResponse.aggregates.push(vals);
+				}
+				var nameIndex = thisNode.attributeNames.indexOf("name");
+				var ent = self.schema.entityTypes[entity];
+				var ids = Object.keys(responses);
+				ids.sort();
+				ids.forEach( function (id) {
+					var response = responses[id];
+					var results = response.results;
+					results.forEach( function (result) {
+						// find the matching result in the aggregates
+						newResponse.aggregates.some( function (aggregate, j) {
+							if (aggregate[nameIndex].sum === result[nameIndex]) {
+								// result and aggregate are now the same record, add the graphable values
+								newResponse.attributeNames.forEach( function (key, i) {
+									if (ent.attributes[key] && ent.attributes[key].graph) {
+										if (id != selectedNodeId)
+											aggregate[i].sum += result[i];
+										aggregate[i].detail.push({node: self.nameFromId(id)+':', val: result[i]})
+									}
+								})
+								return true; // stop looping
+							}
+							return false; // continute looking for the aggregate record
+						})
+					})
+				})
+				callback(nodeNames, entity, newResponse);
+			}
+
+			nodeNames.forEach( function (id) {
+	            self.getNodeInfo(id, '.'+entity, attrs, gotNodesResult);
+	        })
+			//TODO: implement a timeout in case not all requests complete
+		},
 
       getSchema: function () {
         //QDR.log.debug("getting schema");
